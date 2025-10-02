@@ -10,7 +10,7 @@ data "aws_availability_zones" "available" {
 data "aws_vpc" "existing" {
   filter {
     name   = "tag:Name"
-    values = ["infra-totem-de-pedidos-vpc"]
+    values = ["fase3-infra-totem-de-pedidos-vpc"]
   }
 }
 
