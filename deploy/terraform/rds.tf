@@ -63,3 +63,34 @@ resource "aws_security_group" "rds_sg" {
     Name = "${var.project_name}-rds-postgres-sg"
   }
 }
+
+# Outputs para usar na migration
+output "rds_endpoint" {
+  description = "RDS instance endpoint"
+  value       = module.rds.db_instance_endpoint
+  sensitive   = false
+}
+
+output "rds_port" {
+  description = "RDS instance port"
+  value       = module.rds.db_instance_port
+  sensitive   = false
+}
+
+output "rds_username" {
+  description = "RDS instance username"
+  value       = module.rds.db_instance_username
+  sensitive   = false
+}
+
+output "rds_database_name" {
+  description = "RDS database name"
+  value       = module.rds.db_instance_name
+  sensitive   = false
+}
+
+output "rds_password" {
+  description = "RDS instance password"
+  value       = random_password.rds_password.result
+  sensitive   = true
+}
