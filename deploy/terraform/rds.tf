@@ -33,7 +33,7 @@ module "rds" {
 
 resource "aws_db_subnet_group" "rds_subnet_group" {
   name       = "${var.project_name}-rds-postgres-subnet-group"
-  subnet_ids = data.aws_subnets.existing.ids
+  subnet_ids = data.aws_subnets.public_subnets.ids
 
   tags = {
     Name = "${var.project_name}-rds-postgres-subnet-group"
