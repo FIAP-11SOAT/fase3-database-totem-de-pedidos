@@ -80,7 +80,7 @@ output "rds_port" {
 output "rds_username" {
   description = "RDS instance username"
   value       = module.rds.db_instance_username
-  sensitive   = false
+  sensitive   = true
 }
 
 output "rds_database_name" {
