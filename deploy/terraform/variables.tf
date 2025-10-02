@@ -14,10 +14,14 @@ data "aws_vpc" "existing" {
   }
 }
 
-data "aws_subnets" "existing" {
+data "aws_subnets" "public_subnets" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.existing.id]
+  }
+  filter {
+    name   = "tag:Tier"
+    values = ["public"]
   }
 }
 
