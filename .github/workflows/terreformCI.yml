@@ -46,7 +46,7 @@ jobs:
         run: terraform validate
 
       - name: Plan Terraform for RDS
-        if: github.ref == 'refs/heads/main' # Executa apenas na branch main
+        # if: github.ref == 'refs/heads/main' # Executa apenas na branch main
         working-directory: deploy/terraform
         run: terraform plan -out=rds
 
