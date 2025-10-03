@@ -1,4 +1,3 @@
-# VPC Endpoint para comunicação privada entre EKS e RDS
 resource "aws_vpc_endpoint" "rds" {
   vpc_id              = data.aws_vpc.existing.id
   service_name        = "com.amazonaws.${var.aws_region}.rds"

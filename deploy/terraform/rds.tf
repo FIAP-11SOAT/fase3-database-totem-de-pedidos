@@ -1,7 +1,7 @@
 resource "random_password" "rds_password" {
   length  = 16
   special = true
-  override_special = "!#$%&*+-=?^_|~"  # Removidos caracteres não permitidos: / @ " espaço
+  override_special = "!#$%&*+-=?^_|~"
 }
 
 module "rds" {
@@ -64,7 +64,6 @@ resource "aws_security_group" "rds_sg" {
   }
 }
 
-# Outputs para usar na migration
 output "rds_endpoint" {
   description = "RDS instance endpoint"
   value       = module.rds.db_instance_endpoint
