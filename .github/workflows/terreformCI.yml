@@ -100,8 +100,14 @@ jobs:
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
           echo "Aguardando RDS ficar disponível..."
-          echo "Conectando em: $PGHOST:$PGPORT"
+          echo "Endpoint original: ${{ needs.rds.outputs.rds_endpoint }}"
+          echo "Host limpo: $PGHOST"
+          echo "Port: $PGPORT"
           echo "Database: $PGDATABASE"
           echo "User: $PGUSER"
           
@@ -125,8 +131,13 @@ jobs:
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
           echo "=== Testando conexão SSL com o banco de dados ==="
-          echo "Host: $PGHOST"
+          echo "Endpoint original: ${{ needs.rds.outputs.rds_endpoint }}"
+          echo "Host limpo: $PGHOST"
           echo "Port: $PGPORT"
           echo "Database: $PGDATABASE"
           echo "User: $PGUSER"
@@ -151,7 +162,13 @@ jobs:
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
           echo "=== Executando migration no banco de dados ==="
+          echo "Host: $PGHOST"
+          echo "Port: $PGPORT"
           echo "Arquivo: migration/NovoScript.sql"
           echo "============================================="
           
