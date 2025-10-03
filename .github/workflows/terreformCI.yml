@@ -91,6 +91,13 @@ jobs:
           sudo apt-get install -y postgresql-client
 
       - name: Wait for RDS to be ready
+        env:
+          PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
+          PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGUSER: ${{ needs.rds.outputs.rds_username }}
+          PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
         run: |
           echo "Aguardando RDS ficar disponível..."
           for i in {1..30}; do
@@ -102,6 +109,19 @@ jobs:
             sleep 30
           done
 
+      - name: Test SSL Connection
+        env:
+          PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
+          PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
+          PGUSER: ${{ needs.rds.outputs.rds_username }}
+          PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
+        run: |
+          echo "Testando conexão SSL com o banco de dados..."
+          psql -c "SELECT version();" || echo "Erro na conexão de teste"
+
       - name: Run Migration Script
         env:
           PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
@@ -109,6 +129,8 @@ jobs:
           PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
           PGUSER: ${{ needs.rds.outputs.rds_username }}
           PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
         run: |
           echo "Executando migration no banco de dados..."
           psql -f migration/NovoScript.sql
