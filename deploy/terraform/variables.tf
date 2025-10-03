@@ -25,6 +25,17 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.existing.id]
+  }
+  filter {
+    name   = "tag:Tier"
+    values = ["private"]
+  }
+}
+
 locals {
   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 }
