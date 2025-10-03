@@ -94,18 +94,24 @@ jobs:
         env:
           PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
           PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
           PGUSER: ${{ needs.rds.outputs.rds_username }}
           PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
           echo "Aguardando RDS ficar disponível..."
-          for i in {1..30}; do
-            if pg_isready -h ${{ needs.rds.outputs.rds_endpoint }} -p ${{ needs.rds.outputs.rds_port }} -U ${{ needs.rds.outputs.rds_username }}; then
-              echo "RDS está pronto!"
+          echo "Conectando em: $PGHOST:$PGPORT"
+          echo "Database: $PGDATABASE"
+          echo "User: $PGUSER"
+          
+          for i in {1..15}; do
+            echo "Tentativa $i/15 - Testando conexão..."
+            if psql -c "SELECT 1;" > /dev/null 2>&1; then
+              echo "RDS está pronto e acessível!"
               break
             fi
-            echo "Tentativa $i/30 - Aguardando..."
+            echo "Conexão falhou, aguardando 30 segundos..."
             sleep 30
           done
 
@@ -119,8 +125,21 @@ jobs:
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
-          echo "Testando conexão SSL com o banco de dados..."
-          psql -c "SELECT version();" || echo "Erro na conexão de teste"
+          echo "=== Testando conexão SSL com o banco de dados ==="
+          echo "Host: $PGHOST"
+          echo "Port: $PGPORT"
+          echo "Database: $PGDATABASE"
+          echo "User: $PGUSER"
+          echo "SSL Mode: $PGSSLMODE"
+          echo "============================================="
+          
+          echo "Executando SELECT version()..."
+          psql -c "SELECT version();"
+          
+          echo "Verificando se conseguimos listar tabelas..."
+          psql -c "\dt"
+          
+          echo "Conexão SSL funcionando corretamente!"
 
       - name: Run Migration Script
         env:
@@ -132,6 +151,18 @@ jobs:
           PGSSLMODE: require
           PGCONNECT_TIMEOUT: 10
         run: |
-          echo "Executando migration no banco de dados..."
-          psql -f migration/NovoScript.sql
+          echo "=== Executando migration no banco de dados ==="
+          echo "Arquivo: migration/NovoScript.sql"
+          echo "============================================="
+          
+          # Executar o script de migration
+          psql -f migration/NovoScript.sql -v ON_ERROR_STOP=1
+          
+          echo "=== Verificando se as tabelas foram criadas ==="
+          psql -c "\dt"
+          
+          echo "=== Verificando dados inseridos ==="
+          psql -c "SELECT COUNT(*) as categorias FROM product_categories;"
+          psql -c "SELECT COUNT(*) as produtos FROM products;"
+          
           echo "Migration executada com sucesso!"
