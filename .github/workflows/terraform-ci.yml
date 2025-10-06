@@ -168,11 +168,11 @@ jobs:
           echo "=== Executando migration no banco de dados ==="
           echo "Host: $PGHOST"
           echo "Port: $PGPORT"
-          echo "Arquivo: migration/NovoScript.sql"
+          echo "Arquivo: migration/V001_20241005_create_initial_schema.sql"
           echo "============================================="
           
           # Executar o script de migration
-          psql -f migration/NovoScript.sql -v ON_ERROR_STOP=1
+          psql -f migration/V001_20241005_create_initial_schema.sql -v ON_ERROR_STOP=1
           
           echo "=== Verificando se as tabelas foram criadas ==="
           psql -c "\dt"

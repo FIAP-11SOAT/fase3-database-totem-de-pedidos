@@ -65,7 +65,7 @@ terraform plan
 terraform apply
 
 # 4. Execute a migração
-psql -h <rds_endpoint> -U infra_totem_de_pedidos_admin -d infra_totem_de_pedidos_database -f ../migration/NovoScript.sql
+psql -h <rds_endpoint> -U infra_totem_de_pedidos_admin -d infra_totem_de_pedidos_database -f ../migration/V001_20241005_create_initial_schema.sql
 ```
 
 ## 📊 Modelo de Dados
