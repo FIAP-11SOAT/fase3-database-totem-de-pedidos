@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job para verificação do terraform do RDS em pull requests e merge para a main e push da main 
   rds:
     name: Terraform Verification and Push RDS
     runs-on: ubuntu-latest
