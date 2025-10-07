@@ -40,7 +40,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.7.0
+          terraform_version: 1.11.0
           terraform_wrapper: false
 
       # Inicializar, validar e aplicar o Terraform para o diretório deploy/terraform

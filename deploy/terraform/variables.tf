@@ -27,14 +27,7 @@ data "aws_subnets" "private_subnets" {
   }
 }
 
-variable "aws_region" {
-  description = "The AWS region to deploy resources in"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "project_name" {
-  description = "fase3-database-totem-de-pedidos"
-  type        = string
-  default     = "fase3-database-totem-de-pedidos"
+locals {
+  aws_region = "us-east-1"
+  project_name = "fase3-database-totem-de-pedidos"
 }

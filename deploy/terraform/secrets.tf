@@ -1,10 +1,10 @@
 resource "aws_secretsmanager_secret" "secrets" {
-  name                    = "${var.project_name}-secrets"
-  description             = "Secrets for ${var.project_name} project"
+  name                    = "${local.project_name}-secrets"
+  description             = "Secrets for ${local.project_name} project"
   recovery_window_in_days = 0
 
   tags = {
-    Name = "${var.project_name}-secrets"
+    Name = "${local.project_name}-secrets"
   }
 }
 

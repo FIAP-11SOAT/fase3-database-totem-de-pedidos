@@ -8,7 +8,7 @@ module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.0"
 
-  identifier = "${var.project_name}-rds-postgres"
+  identifier = "${local.project_name}-rds-postgres"
 
   engine               = "postgres"
   engine_version       = "17.5"
@@ -27,21 +27,21 @@ module "rds" {
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
 
   tags = {
-    Name = "${var.project_name}-rds-postgres"
+    Name = "${local.project_name}-rds-postgres"
   }
 }
 
 resource "aws_db_subnet_group" "rds_subnet_group" {
-  name       = "${var.project_name}-rds-postgres-subnet-group"
+  name       = "${local.project_name}-rds-postgres-subnet-group"
   subnet_ids = data.aws_subnets.public_subnets.ids
 
   tags = {
-    Name = "${var.project_name}-rds-postgres-subnet-group"
+    Name = "${local.project_name}-rds-postgres-subnet-group"
   }
 }
 
 resource "aws_security_group" "rds_sg" {
-  name_prefix = "${var.project_name}-rds-postgres-sg"
+  name_prefix = "${local.project_name}-rds-postgres-sg"
   vpc_id      = data.aws_vpc.existing.id
 
   ingress {
@@ -60,7 +60,7 @@ resource "aws_security_group" "rds_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-rds-postgres-sg"
+    Name = "${local.project_name}-rds-postgres-sg"
   }
 }
 

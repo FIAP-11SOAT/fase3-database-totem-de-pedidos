@@ -1,6 +1,6 @@
 resource "aws_vpc_endpoint" "rds" {
   vpc_id              = data.aws_vpc.existing.id
-  service_name        = "com.amazonaws.${var.aws_region}.rds"
+  service_name        = "com.amazonaws.${local.aws_region}.rds"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.private_subnets.ids
   security_group_ids  = [aws_security_group.vpc_endpoint_sg.id]
@@ -22,15 +22,23 @@ resource "aws_vpc_endpoint" "rds" {
   })
 
   tags = {
-    Name = "${var.project_name}-rds-vpc-endpoint"
+    Name = "${local.project_name}-rds-vpc-endpoint"
   }
 }
 
 # Security Group para o VPC Endpoint
 resource "aws_security_group" "vpc_endpoint_sg" {
-  name_prefix = "${var.project_name}-vpc-endpoint-sg"
+  name_prefix = "${local.project_name}-vpc-endpoint-sg"
   description = "Security group for RDS VPC Endpoint"
   vpc_id      = data.aws_vpc.existing.id
+
+  ingress {
+    description = "HTTPS from EKS and VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [data.aws_vpc.existing.cidr_block]
+  }
 
   ingress {
     description = "HTTPS from EKS and VPC"
@@ -57,7 +65,7 @@ resource "aws_security_group" "vpc_endpoint_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-vpc-endpoint-sg"
+    Name = "${local.project_name}-vpc-endpoint-sg"
   }
 }
 
