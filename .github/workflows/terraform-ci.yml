@@ -1,0 +1,184 @@
+name: Terraform RDS Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  rds:
+    name: Terraform Verification and Push RDS
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      rds_endpoint: ${{ steps.terraform_output.outputs.rds_endpoint }}
+      rds_port: ${{ steps.terraform_output.outputs.rds_port }}
+      rds_username: ${{ steps.terraform_output.outputs.rds_username }}
+      rds_database_name: ${{ steps.terraform_output.outputs.rds_database_name }}
+      rds_password: ${{ steps.terraform_output.outputs.rds_password }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0
+          terraform_wrapper: false
+
+      # Inicializar, validar e aplicar o Terraform para o diretório deploy/terraform
+      - name: Initialize Terraform for RDS
+        working-directory: deploy/terraform
+        run: terraform init
+
+      - name: Validate Terraform for RDS
+        working-directory: deploy/terraform
+        run: terraform validate
+
+      - name: Plan Terraform for RDS
+        # if: github.ref == 'refs/heads/main' # Executa apenas na branch main
+        working-directory: deploy/terraform
+        run: terraform plan -out=rds
+
+      - name: Apply Terraform for RDS
+        # if: github.ref == 'refs/heads/main' # Executa apenas na branch main
+        working-directory: deploy/terraform
+        run: terraform apply -auto-approve rds
+
+      - name: Get Terraform Outputs
+        # if: github.ref == 'refs/heads/main'
+        id: terraform_output
+        working-directory: deploy/terraform
+        run: |
+          echo "rds_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "rds_port=$(terraform output -raw rds_port)" >> $GITHUB_OUTPUT
+          echo "rds_username=$(terraform output -raw rds_username)" >> $GITHUB_OUTPUT
+          echo "rds_database_name=$(terraform output -raw rds_database_name)" >> $GITHUB_OUTPUT
+          echo "rds_password=$(terraform output -raw rds_password)" >> $GITHUB_OUTPUT
+
+  # Job para executar a migration no banco de dados
+  migration:
+    name: Run Database Migration
+    runs-on: ubuntu-latest
+    needs: rds
+    # if: github.ref == 'refs/heads/main' # Executa apenas na branch main
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for RDS to be ready
+        env:
+          PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
+          PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
+          PGUSER: ${{ needs.rds.outputs.rds_username }}
+          PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
+        run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
+          echo "Aguardando RDS ficar disponível..."
+          echo "Endpoint original: ${{ needs.rds.outputs.rds_endpoint }}"
+          echo "Host limpo: $PGHOST"
+          echo "Port: $PGPORT"
+          echo "Database: $PGDATABASE"
+          echo "User: $PGUSER"
+          
+          for i in {1..15}; do
+            echo "Tentativa $i/15 - Testando conexão..."
+            if psql -c "SELECT 1;" > /dev/null 2>&1; then
+              echo "RDS está pronto e acessível!"
+              break
+            fi
+            echo "Conexão falhou, aguardando 30 segundos..."
+            sleep 30
+          done
+
+      - name: Test SSL Connection
+        env:
+          PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
+          PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
+          PGUSER: ${{ needs.rds.outputs.rds_username }}
+          PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
+        run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
+          echo "=== Testando conexão SSL com o banco de dados ==="
+          echo "Endpoint original: ${{ needs.rds.outputs.rds_endpoint }}"
+          echo "Host limpo: $PGHOST"
+          echo "Port: $PGPORT"
+          echo "Database: $PGDATABASE"
+          echo "User: $PGUSER"
+          echo "SSL Mode: $PGSSLMODE"
+          echo "============================================="
+          
+          echo "Executando SELECT version()..."
+          psql -c "SELECT version();"
+          
+          echo "Verificando se conseguimos listar tabelas..."
+          psql -c "\dt"
+          
+          echo "Conexão SSL funcionando corretamente!"
+
+      - name: Run Migration Script
+        env:
+          PGHOST: ${{ needs.rds.outputs.rds_endpoint }}
+          PGPORT: ${{ needs.rds.outputs.rds_port }}
+          PGDATABASE: ${{ needs.rds.outputs.rds_database_name }}
+          PGUSER: ${{ needs.rds.outputs.rds_username }}
+          PGPASSWORD: ${{ needs.rds.outputs.rds_password }}
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: 10
+        run: |
+          # Extrair apenas o hostname do endpoint (remover porta se existir)
+          PGHOST_CLEAN=$(echo "$PGHOST" | cut -d':' -f1)
+          export PGHOST=$PGHOST_CLEAN
+          
+          echo "=== Executando migration no banco de dados ==="
+          echo "Host: $PGHOST"
+          echo "Port: $PGPORT"
+          echo "Arquivo: migration/V001_20241005_create_initial_schema.sql"
+          echo "============================================="
+          
+          # Executar o script de migration
+          psql -f migration/V001_20241005_create_initial_schema.sql -v ON_ERROR_STOP=1
+          
+          echo "=== Verificando se as tabelas foram criadas ==="
+          psql -c "\dt"
+          
+          echo "=== Verificando dados inseridos ==="
+          psql -c "SELECT COUNT(*) as categorias FROM product_categories;"
+          psql -c "SELECT COUNT(*) as produtos FROM products;"
+          
+          echo "Migration executada com sucesso!"
